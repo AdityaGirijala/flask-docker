@@ -1,6 +1,5 @@
 ---
 - hosts: all
-  become: true
   tasks:
   - name: Delete Kubernetes Objects
     command: kubectl delete -f kubernetes.yaml

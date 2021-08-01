@@ -3,10 +3,10 @@
   tasks:
   - name: copy manifests
     copy:
-      src: /home/ubuntu/workspace/jenkins-kubernetes/kubernetes.yaml
-      dest: /home/ubuntu/
+      src: kubernetes.yaml
+      dest: /home/ansible/kubernetes/
   - name: Delete Kubernetes Objects
-    shell: kubectl delete -f /home/ubuntu/kubernetes.yaml
+    shell: kubectl delete -f kubernetes.yaml
     ignore_errors: True
   - name: Deploy Kubernetes Objects
-    shell: kubectl apply -f /home/ubuntu/kubernetes.yaml
+    shell: kubectl apply -f kubernetes.yaml

@@ -6,7 +6,7 @@
       src: kubernetes.yaml
       dest: /home/ansible/kubernetes/
   - name: Delete Kubernetes Objects
-    shell: kubectl delete -f kubernetes.yaml
+    shell: kubectl delete -f /home/ansible/kubernetes/kubernetes.yaml
     ignore_errors: True
   - name: Deploy Kubernetes Objects
-    shell: kubectl apply -f kubernetes.yaml
+    shell: kubectl apply -f /home/ansible/kubernetes/kubernetes.yaml

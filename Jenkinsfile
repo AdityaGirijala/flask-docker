@@ -1,62 +1,61 @@
 pipeline
 {
-    agent any
+    agent none
     stages
     {
         stage("Code Checkout")
         {
+            agent
+            {
+                label 'Docker'
+            }
             steps
             {
-                git url:'https://github.com/devops-example-projects/flask-docker.git',branch: 'main'
+                git branch: 'main', url: 'https://github.com/devops-example-projects/flask-docker.git'
             }
         }
         stage("Code Build")
         {
+            agent
+            {
+                label 'Docker'
+            }
             steps
             {
-                script
-                {
-                    sh "docker build -t flask-docker ."
-                }
+                sh "docker build -t flask-docker-app ."
+                sh "docker tag flask-docker-app adityadevops/flask-docker-app:${env.BUILD_ID}"
+                //sh "docker tag flask-app adityadevops/flask-docker-app:${env.BUILD_TAG}"
+                sh "docker tag flask-docker-app adityadevops/flask-docker-app:latest"
             }
         }
-        stage("Push to DockerHub")
+        stage("Push To Docker Hub")
         {
+            agent
+            {
+                label 'Docker'
+            }
             steps
             {
-                script
+                withCredentials([string(credentialsId: 'DockerHubPassword', variable: 'Docker_Hub_Password')]) 
                 {
-                    def buildNumber = BUILD_NUMBER
-                    sh "docker tag flask-docker adityadevops/flask-docker:${buildNumber}"
-                    sh "docker tag flask-docker adityadevops/flask-docker:latest"
-                    withCredentials([string(credentialsId: 'DockerHubPass', variable: 'DockerHubPassword')])
-                    {
-                        sh "docker login -u adityadevops -p ${DockerHubPassword}"
-                    }
-                    sh "docker push adityadevops/flask-docker:${buildNumber}"
-                    sh "docker push adityadevops/flask-docker:latest"
+                    sh 'docker login -u adityadevops -p ${Docker_Hub_Password}'
                 }
+                sh "docker push adityadevops/flask-docker-app:${env.BUILD_ID}"
+                sh "docker push adityadevops/flask-docker-app:latest"
+                sh "docker rmi flask-docker-app"
+                sh "docker rmi adityadevops/flask-docker-app:${env.BUILD_ID}"
+                sh "docker rmi adityadevops/flask-docker-app:latest"
             }
         }
-        stage("Deploy on Kubernetes Cluster")
+        stage("Trigger Ansible Playbook")
         {
+            agent
+            {
+                label 'Docker'
+            }
             steps
             {
-                sshagent(['k8s'])
-                {
-                    sh "scp -o StrictHostKeyChecking=no kubernetes.yaml ec2-user@172.31.29.187:/home/ec2-user"
-                    script
-                    {
-                        try
-                        {
-                             sh "ssh ec2-user@172.31.29.187 kubectl apply -f kubernetes.yaml"
-                        }
-                        catch(error)
-                        {
-                            sh "ssh ec2-user@172.31.29.187 kubectl create -f kubernetes.yaml"
-                        }
-                    }
-                }
+                sh "ansible-playbook -i hosts playbook.yaml"
             }
         }
     }
